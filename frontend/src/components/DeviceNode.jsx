@@ -14,20 +14,27 @@ export default function DeviceNode({ data, selected }) {
   const Icon = ICONS[data.type] || Monitor
   const offline = data.status === 'inactive'
   const highlighted = data.pathActive
+  const connectorSource = data.connectorSource
 
   const glow = selected
     ? `0 0 0 2px ${meta.color}, 0 10px 30px -10px ${meta.color}`
-    : highlighted
-      ? `0 0 0 2px #34d399, 0 0 18px 2px rgba(52,211,153,0.55)`
-      : '0 10px 24px -14px #000'
+    : connectorSource
+      ? '0 0 0 2px #22d3ee, 0 0 18px 2px rgba(34,211,238,0.6)'
+      : highlighted
+        ? `0 0 0 2px #34d399, 0 0 18px 2px rgba(52,211,153,0.55)`
+        : '0 10px 24px -14px #000'
 
   return (
     <div
       className={`relative w-[150px] rounded-xl border bg-slate-900/95 px-3 py-2 transition ${
         offline ? 'opacity-60' : ''
-      }`}
+      } ${data.connectorMode ? 'cursor-crosshair' : ''}`}
       style={{
-        borderColor: highlighted ? '#34d399' : meta.color,
+        borderColor: connectorSource
+          ? '#22d3ee'
+          : highlighted
+            ? '#34d399'
+            : meta.color,
         boxShadow: glow,
         borderStyle: offline ? 'dashed' : 'solid',
       }}

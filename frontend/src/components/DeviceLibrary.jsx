@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import {
+  Cable,
   Layers,
   Loader2,
   Monitor,
@@ -19,7 +20,13 @@ const ICONS = {
 }
 
 export default function DeviceLibrary() {
-  const { addDevice, generateTopology } = useNetwork()
+  const {
+    addDevice,
+    generateTopology,
+    connectorMode,
+    connectorSourceId,
+    toggleConnector,
+  } = useNetwork()
   const [topology, setTopology] = useState('star')
   const [count, setCount] = useState(4)
   const [busy, setBusy] = useState(false)
@@ -78,6 +85,39 @@ export default function DeviceLibrary() {
             )
           })}
         </div>
+
+        <button
+          type="button"
+          onClick={toggleConnector}
+          className={`mt-2 flex w-full items-center gap-2 rounded-lg border p-2.5 text-left transition ${
+            connectorMode
+              ? 'border-cyan-400/80 bg-cyan-500/15 text-cyan-100'
+              : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-600'
+          }`}
+          style={{ borderLeft: '3px solid #22d3ee' }}
+        >
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-md"
+            style={{ background: 'rgba(34, 211, 238, 0.14)', color: '#22d3ee' }}
+          >
+            <Cable size={15} />
+          </div>
+          <div className="flex-1">
+            <div className="text-[11px] font-semibold">Connector</div>
+            <div className="text-[9px] text-slate-500">
+              {connectorMode
+                ? connectorSourceId
+                  ? `Target for ${connectorSourceId} — click a device`
+                  : 'Click the first device'
+                : 'Link two devices'}
+            </div>
+          </div>
+          {connectorMode && (
+            <span className="rounded-full bg-cyan-500/20 px-1.5 py-0.5 text-[9px] font-semibold text-cyan-200">
+              ON
+            </span>
+          )}
+        </button>
       </section>
 
       <section className="border-t border-slate-800 pt-4">
@@ -138,8 +178,9 @@ export default function DeviceLibrary() {
           Quick tip
         </div>
         <p className="mt-1 text-[9px] leading-relaxed text-slate-500">
-          Drag from a node handle to another node to create a link. Select a
-          device to edit its properties on the right.
+          Drag from a node handle to another node to create a link, or use the
+          Connector tool to click two devices. Select a device to edit its
+          properties on the right.
         </p>
       </section>
     </aside>

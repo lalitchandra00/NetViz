@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   Background,
   Controls,
@@ -6,7 +6,7 @@ import {
   ReactFlow,
   useReactFlow,
 } from '@xyflow/react'
-import { MousePointerClick } from 'lucide-react'
+import { Cable, MousePointerClick, X } from 'lucide-react'
 import DeviceNode from './DeviceNode'
 import PacketNode from './PacketNode'
 import { DEVICE_TYPES } from '../lib/constants'
@@ -29,9 +29,22 @@ export default function NetworkCanvas() {
     addDevice,
     addConnection,
     activePath,
+    connectorMode,
+    connectorSourceId,
+    pickConnectorNode,
+    cancelConnector,
   } = useNetwork()
   const { screenToFlowPosition } = useReactFlow()
   const wrapperRef = useRef(null)
+
+  useEffect(() => {
+    if (!connectorMode) return undefined
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') cancelConnector()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [connectorMode, cancelConnector])
 
   const pathEdgeSet = useMemo(() => {
     const set = new Set()
@@ -48,10 +61,18 @@ export default function NetworkCanvas() {
     () =>
       nodes.map((node) =>
         node.type === 'device'
-          ? { ...node, data: { ...node.data, pathActive: pathNodeSet.has(node.id) } }
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                pathActive: pathNodeSet.has(node.id),
+                connectorSource: connectorMode && connectorSourceId === node.id,
+                connectorMode,
+              },
+            }
           : node,
       ),
-    [nodes, pathNodeSet],
+    [nodes, pathNodeSet, connectorMode, connectorSourceId],
   )
 
   const displayEdges = useMemo(
@@ -112,7 +133,10 @@ export default function NetworkCanvas() {
   const isEmpty = nodes.filter((node) => node.type !== 'packet').length === 0
 
   return (
-    <div ref={wrapperRef} className="relative h-full w-full">
+    <div
+      ref={wrapperRef}
+      className={`relative h-full w-full ${connectorMode ? 'cursor-crosshair' : ''}`}
+    >
       <ReactFlow
         nodes={displayNodes}
         edges={displayEdges}
@@ -124,10 +148,16 @@ export default function NetworkCanvas() {
         onConnect={handleConnect}
         isValidConnection={isValidConnection}
         onNodeClick={(_, node) => {
-          if (node.type !== 'packet') selectNode(node.id)
+          if (node.type !== 'packet') {
+            if (connectorMode) pickConnectorNode(node.id)
+            else selectNode(node.id)
+          }
         }}
         onEdgeClick={(_, edge) => selectEdge(edge.id)}
-        onPaneClick={clearSelection}
+        onPaneClick={() => {
+          clearSelection()
+          if (connectorMode) cancelConnector()
+        }}
         onDrop={onDrop}
         onDragOver={onDragOver}
         deleteKeyCode={['Delete', 'Backspace']}
@@ -155,6 +185,25 @@ export default function NetworkCanvas() {
           }
         />
       </ReactFlow>
+
+      {connectorMode && (
+        <div className="pointer-events-none absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-lg border border-cyan-500/50 bg-slate-900/95 px-3 py-2 text-[11px] text-cyan-100 shadow-lg">
+          <Cable size={14} className="text-cyan-300" />
+          <span>
+            {connectorSourceId
+              ? `Source ${connectorSourceId} selected — click the target device`
+              : 'Connector active — click the first device'}
+          </span>
+          <button
+            type="button"
+            onClick={cancelConnector}
+            className="pointer-events-auto rounded p-0.5 text-cyan-300 transition hover:bg-cyan-500/20"
+            title="Cancel (Esc)"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
 
       {isEmpty && (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">

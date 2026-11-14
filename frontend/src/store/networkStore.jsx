@@ -36,6 +36,8 @@ export function NetworkProvider({ children }) {
   const [edges, setEdges] = useState([])
   const [selectedNodeId, setSelectedNodeId] = useState(null)
   const [selectedEdgeId, setSelectedEdgeId] = useState(null)
+  const [connectorMode, setConnectorMode] = useState(false)
+  const [connectorSourceId, setConnectorSourceId] = useState(null)
   const [events, setEvents] = useState([])
   const [packets, setPackets] = useState([])
   const [activePath, setActivePath] = useState([])
@@ -106,6 +108,7 @@ export function NetworkProvider({ children }) {
         ),
       )
       setSelectedNodeId((current) => (ids.has(current) ? null : current))
+      setConnectorSourceId((current) => (ids.has(current) ? null : current))
       deleted.forEach((node) =>
         addEvent(
           'device_deleted',
@@ -192,6 +195,7 @@ export function NetworkProvider({ children }) {
         previous.filter((edge) => edge.source !== id && edge.target !== id),
       )
       setSelectedNodeId((current) => (current === id ? null : current))
+      setConnectorSourceId((current) => (current === id ? null : current))
       addEvent('device_deleted', `Device ${node?.data?.name || id} deleted`)
     },
     [addEvent],
@@ -217,6 +221,42 @@ export function NetworkProvider({ children }) {
       return { ok: true, edge }
     },
     [addEvent, pushNotice],
+  )
+
+  const cancelConnector = useCallback(() => {
+    setConnectorMode(false)
+    setConnectorSourceId(null)
+  }, [])
+
+  const toggleConnector = useCallback(() => {
+    setConnectorMode((active) => {
+      if (active) {
+        setConnectorSourceId(null)
+        return false
+      }
+      setSelectedNodeId(null)
+      setSelectedEdgeId(null)
+      pushNotice('Connector active — click two devices to link them.', 'info')
+      return true
+    })
+  }, [pushNotice])
+
+  const pickConnectorNode = useCallback(
+    (id) => {
+      if (!id) return
+      if (!connectorSourceId) {
+        setConnectorSourceId(id)
+        return
+      }
+      if (connectorSourceId === id) {
+        pushNotice('Pick a different device to complete the link.', 'error')
+        return
+      }
+      const result = addConnection(connectorSourceId, id)
+      setConnectorSourceId(null)
+      if (result.ok) setConnectorMode(false)
+    },
+    [addConnection, connectorSourceId, pushNotice],
   )
 
   const removeConnection = useCallback(
@@ -462,6 +502,8 @@ export function NetworkProvider({ children }) {
       setEvents(data.events || [])
       setSelectedNodeId(null)
       setSelectedEdgeId(null)
+      setConnectorMode(false)
+      setConnectorSourceId(null)
       setActivePath([])
       setSimulation({ status: 'idle', running: false, result: null, error: null })
       addEvent('network_loaded', 'Network loaded from browser storage')
@@ -479,6 +521,8 @@ export function NetworkProvider({ children }) {
     setEdges([])
     setSelectedNodeId(null)
     setSelectedEdgeId(null)
+    setConnectorMode(false)
+    setConnectorSourceId(null)
     setPackets([])
     setActivePath([])
     setSimulation({ status: 'idle', running: false, result: null, error: null })
@@ -521,6 +565,11 @@ export function NetworkProvider({ children }) {
       selectNode,
       selectEdge,
       clearSelection,
+      connectorMode,
+      connectorSourceId,
+      toggleConnector,
+      cancelConnector,
+      pickConnectorNode,
       addDevice,
       updateDevice,
       removeDevice,
@@ -554,6 +603,11 @@ export function NetworkProvider({ children }) {
       selectNode,
       selectEdge,
       clearSelection,
+      connectorMode,
+      connectorSourceId,
+      toggleConnector,
+      cancelConnector,
+      pickConnectorNode,
       addDevice,
       updateDevice,
       removeDevice,
