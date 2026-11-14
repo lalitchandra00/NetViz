@@ -34,10 +34,8 @@ def find_path(
     """Shortest path by edge count using BFS (NetworkX unweighted shortest path)."""
     if source not in graph or target not in graph:
         return None
-    try:
-        return nx.shortest_path(graph, source, target, weight=None, method="bfs")
-    except (nx.NetworkXNoPath, nx.NodeNotFound):
-        return None
+    paths = nx.single_source_shortest_path(graph, source)
+    return paths.get(target)
 
 
 def is_connected(graph: nx.Graph) -> bool:
