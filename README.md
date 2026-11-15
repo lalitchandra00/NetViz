@@ -2,6 +2,8 @@
 
 > A web-based application for designing computer network topologies and simulating packet transmission — built as a Computer Networks mini project.
 
+🌐 **Frontend:** [net-viz.vercel.app](https://net-viz.vercel.app) &nbsp;|&nbsp; ⚙️ **Backend API:** [netviz-4l0g.onrender.com](https://netviz-4l0g.onrender.com)
+
 ---
 
 ## Overview
